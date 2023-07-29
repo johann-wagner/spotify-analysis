@@ -56,9 +56,7 @@ JRAW_FOLLOW <- read_json(
   path = here(
     "raw_data",
     "Follow.json"
-    ),
-  simplifyVector = TRUE,
-  flatten = TRUE
+    )
   )
 
 JRAW_IDENTIFIERS <- read_json(
@@ -89,6 +87,27 @@ JRAW_MARQUEE <- read_json(
   )
 )
 
+JRAW_PAYMENT <- read_json(
+  path = here(
+    "raw_data",
+    "Payments.json"
+  )
+)
+
+JRAW_PLAYLIST <- read_json(
+  path = here(
+    "raw_data",
+    "Playlist1.json"
+  )
+)
+
+JRAW_STREAMING_HISTORY_0 <- read_json(
+  path = here(
+    "raw_data",
+    "StreamingHistory0.json"
+  )
+)
+
 # Data Tidying ----------------------------------------------------------------
 
 # Nested lists into tidy tibbles
@@ -104,6 +123,14 @@ RAW_IDENTITY <- JRAW_IDENTITY %>%
 RAW_INFERENCES <- JRAW_INFERENCES %>% 
   as_tibble()
 
+RAW_PAYMENT <- JRAW_PAYMENT %>% 
+  as_tibble()
+
+RAW_PLAYLIST <- JRAW_PLAYLIST %>% 
+  as_tibble()
+
+RAW_STREAMING_HISTORY_0 <- JRAW_STREAMING_HISTORY_0 %>% 
+  as_tibble()
 
 # Data Wrangling ---------------------------------------------------------------
 
