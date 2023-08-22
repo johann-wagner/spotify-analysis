@@ -19,6 +19,8 @@ source(
   max.deparse.length = 1e4
 )
 
+dir.create(here("raw_data"), showWarnings = FALSE)
+
 
 
 
@@ -56,8 +58,8 @@ JRAW_FOLLOW <- read_json(
   path = here(
     "raw_data",
     "Follow.json"
-    )
   )
+)
 
 JRAW_IDENTIFIERS <- read_json(
   path = here(
@@ -108,6 +110,34 @@ JRAW_STREAMING_HISTORY_0 <- read_json(
   )
 )
 
+JRAW_STREAMING_HISTORY_1 <- read_json(
+  path = here(
+    "raw_data",
+    "StreamingHistory1.json"
+  )
+)
+
+JRAW_STREAMING_HISTORY_2 <- read_json(
+  path = here(
+    "raw_data",
+    "StreamingHistory2.json"
+  )
+)
+
+JRAW_USER_DATA <- read_json(
+  path = here(
+    "raw_data",
+    "Userdata.json"
+  )
+)
+
+JRAW_YOUR_LIBRARY <- read_json(
+  path = here(
+    "raw_data",
+    "YourLibrary.json"
+  )
+)
+
 # Data Tidying ----------------------------------------------------------------
 
 # Nested lists into tidy tibbles
@@ -127,9 +157,28 @@ RAW_PAYMENT <- JRAW_PAYMENT %>%
   as_tibble()
 
 RAW_PLAYLIST <- JRAW_PLAYLIST %>% 
-  as_tibble()
+  bind_rows() %>% 
+  unnest(items) %>% 
+  mutate(
+    date_added = case_when(
+      length(items) == 1 ~ items
+    )
+  )
 
 RAW_STREAMING_HISTORY_0 <- JRAW_STREAMING_HISTORY_0 %>% 
+  bind_rows() %>% 
+  as_tibble()
+
+RAW_STREAMING_HISTORY_1 <- JRAW_STREAMING_HISTORY_1 %>% 
+  as_tibble()
+
+RAW_STREAMING_HISTORY_2 <- JRAW_STREAMING_HISTORY_2 %>% 
+  as_tibble()
+
+RAW_USER_DATA <- JRAW_USER_DATA %>% 
+  as_tibble()
+
+RAW_YOUR_LIBRARY <- JRAW_YOUR_LIBRARY %>% 
   as_tibble()
 
 # Data Wrangling ---------------------------------------------------------------
