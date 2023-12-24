@@ -30,12 +30,11 @@ library(glue)
 # To allow interaction between files on Google Drive and R
 library(googledrive)
 
-# To easily web scrape web pages
-### https://rvest.tidyverse.org/
-library(rvest)
-
-
-
+library(ggplot2)
+library(skimr)
+library(lubridate)
+library(geomrepel)
+library(ggthemes)
 ### Other packages:
 
 # To enable easy file referencing in project-oriented workflows
