@@ -61,13 +61,25 @@ CLEANED_STREAMING_HISTORY |>
   skim(end_date_time)
 
 
-# Minutes played per day
+
 STREAMING_HISTORY_PER_DAY <- CLEANED_STREAMING_HISTORY |> 
   group_by(end_date_time) |>
   summarise(
     total_hours_played = sum(min_played / 60)
   )
 
+
+
+# What were the top 5 days I listened to music?
+# What days of the week were these dates?
+STREAMING_HISTORY_PER_DAY |> 
+  mutate(
+    day_of_week = wday(end_date_time, label = TRUE)
+  ) |> 
+  arrange(desc(total_hours_played)) |> 
+  head(5)
+
+# Minutes played per day
 STREAMING_HISTORY_PER_DAY |> 
   ggplot(aes(x = end_date_time, y = total_hours_played)) +
   
