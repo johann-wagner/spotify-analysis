@@ -1,0 +1,477 @@
+---
+title: "Spotify Exploratory Data Analysis"
+format: html
+---
+
+## Setup and Configuration
+
+```{r}
+### "Tidyverse"-oriented packages:
+
+# The tidyverse is a collection of R packages designed for data science.
+# All packages share a similar design philosophy, grammar, and data structures.
+# Tidyverse includes packages such as:
+# ggplot2, dplyr, tidyr, readr, purr, tibble, stringr, lubriate, and forcats.
+### https://www.tidyverse.org/
+library(tidyverse)
+
+# To interpolate ("glue") data into strings.
+# Compared to paste() and sprintf()
+# Easier to write and less time consuming to maintain.
+### https://glue.tidyverse.org/reference/index.html
+library(glue)
+
+# To allow interaction between files on Google Drive and R
+library(googledrive)
+
+library(ggplot2)
+library(skimr)
+library(lubridate)
+library(ggthemes)
+### Other packages:
+
+# To enable easy file referencing in project-oriented workflows
+# In contrast to using setwd()
+### https://here.r-lib.org/
+library(here)
+
+# A fast JSON parser and generator
+### https://cran.r-project.org/web/packages/jsonlite/index.html
+library(jsonlite)
+
+
+
+
+
+# Google Drive Authentication --------------------------------------------------
+
+# To establish a connection between a Google Drive account and R
+drive_auth()
+
+# Example of how to download from Google Drive
+# drive_download(
+#   # Where to download file from
+#   "https://drive.google.com/file/d/1Fjq1r6016H4isB2Cx2wg-Xm9zY7lHhYV/view?usp=drive_link",
+# 
+#   # Where to save it locally
+#   path = here("foldertest", "text2")
+#   )
+
+```
+
+
+
+
+
+
+## Data Loading
+```{r}
+# Only download raw data if it hasn't already been downloaded
+if(!dir.exists(here("raw_data"))) {
+  dir.create(here("raw_data"), showWarnings = FALSE)
+
+  # List contents of Spotify Analysis Folder
+  # Only have access if Johann has given you read access to the email you 
+  # authorised in 0-00_setup_and_configuration.R
+  spotify_dribble <- drive_ls("Spotify Analysis")
+  
+  # Download raw data
+  map2(
+    spotify_dribble$id,
+    spotify_dribble$name,
+    ~ drive_download(
+      file = as_id(.x),
+      path = here("raw_data", .y),
+      overwrite = TRUE
+    )
+  )
+}
+
+
+
+# Read in individual raw json as nested lists
+# JRAW = RAW JSON
+# RAW_JSON causes alphabetical ordering inconveniences in R environment.
+JRAW_FOLLOW <- read_json(
+  path = here(
+    "raw_data",
+    "Follow.json"
+  )
+)
+
+JRAW_IDENTIFIERS <- read_json(
+  path = here(
+    "raw_data",
+    "Identifiers.json"
+  )
+)
+
+JRAW_IDENTITY <- read_json(
+  path = here(
+    "raw_data",
+    "Identity.json"
+  )
+)
+
+JRAW_INFERENCES <- read_json(
+  path = here(
+    "raw_data",
+    "Inferences.json"
+  )
+)
+
+JRAW_MARQUEE <- read_json(
+  path = here(
+    "raw_data",
+    "Inferences.json"
+  )
+)
+
+JRAW_PAYMENT <- read_json(
+  path = here(
+    "raw_data",
+    "Payments.json"
+  )
+)
+
+JRAW_PLAYLIST <- read_json(
+  path = here(
+    "raw_data",
+    "Playlist1.json"
+  )
+)
+
+JRAW_STREAMING_HISTORY_0 <- read_json(
+  path = here(
+    "raw_data",
+    "StreamingHistory0.json"
+  )
+)
+
+JRAW_STREAMING_HISTORY_1 <- read_json(
+  path = here(
+    "raw_data",
+    "StreamingHistory1.json"
+  )
+)
+
+JRAW_STREAMING_HISTORY_2 <- read_json(
+  path = here(
+    "raw_data",
+    "StreamingHistory2.json"
+  )
+)
+
+JRAW_USER_DATA <- read_json(
+  path = here(
+    "raw_data",
+    "Userdata.json"
+  )
+)
+
+JRAW_YOUR_LIBRARY <- read_json(
+  path = here(
+    "raw_data",
+    "YourLibrary.json"
+  )
+)
+```
+
+
+
+
+
+## Data Tidying
+
+```{r}
+# Nested lists into tidy tibbles
+RAW_FOLLOW <- JRAW_FOLLOW %>% 
+  as_tibble()
+
+RAW_IDENTIFIERS <- JRAW_IDENTIFIERS %>% 
+  as_tibble()
+
+RAW_IDENTITY <- JRAW_IDENTITY %>% 
+  as_tibble()
+
+RAW_INFERENCES <- JRAW_INFERENCES %>% 
+  as_tibble()
+
+RAW_PAYMENT <- JRAW_PAYMENT %>% 
+  as_tibble()
+
+RAW_PLAYLIST <- JRAW_PLAYLIST %>%
+  bind_rows() %>%
+  unnest_wider(items) %>%
+  unnest_wider(track)
+  
+  
+  
+RAW_STREAMING_HISTORY_0 <- JRAW_STREAMING_HISTORY_0 %>% 
+  bind_rows() %>% 
+  as_tibble()
+
+RAW_STREAMING_HISTORY_1 <- JRAW_STREAMING_HISTORY_1 %>% 
+  bind_rows() |> 
+  as_tibble()
+
+RAW_STREAMING_HISTORY_2 <- JRAW_STREAMING_HISTORY_2 %>% 
+  bind_rows() |> 
+  as_tibble()
+
+RAW_USER_DATA <- JRAW_USER_DATA %>% 
+  bind_rows() |> 
+  as_tibble()
+
+
+RAW_YOUR_LIBRARY_TRACKS <- JRAW_YOUR_LIBRARY[["tracks"]] %>% 
+  bind_rows() |> 
+  as_tibble()
+
+RAW_YOUR_LIBRARY_ALBUMS <- JRAW_YOUR_LIBRARY[["albums"]] %>% 
+  bind_rows() |> 
+  as_tibble()
+
+RAW_YOUR_LIBRARY_SHOWS <- JRAW_YOUR_LIBRARY[["shows"]] %>% 
+  bind_rows() |> 
+  as_tibble()
+
+RAW_YOUR_LIBRARY_EPISODES <- JRAW_YOUR_LIBRARY[["episodes"]] %>% 
+  bind_rows() |> 
+  as_tibble()
+
+RAW_YOUR_LIBRARY_ARTISTS <- JRAW_YOUR_LIBRARY[["artists"]] %>% 
+  bind_rows() |> 
+  as_tibble()
+```
+
+
+
+
+
+## Data Cleaning
+```{r}
+# Combine all streaming history tibbles into one tibble
+RAW_STREAMING_HISTORY <- bind_rows(
+  RAW_STREAMING_HISTORY_0,
+  RAW_STREAMING_HISTORY_1,
+  RAW_STREAMING_HISTORY_2
+)
+
+CLEANED_STREAMING_HISTORY <- RAW_STREAMING_HISTORY |> 
+  mutate(
+    # Convert ms to minutes
+    min_played = as.numeric(msPlayed / 60000),
+    
+    # Convert artistName to factor
+    artist_name = as.factor(artistName),
+    
+    track_name = as.character(trackName),
+    
+    # Convert endTime into lubridate datetime
+    streaming_datetime = as_date(endTime, format = "%Y-%m-%d %H:%M")
+  ) |> 
+  
+  # Remove unnecessary columns
+  select(
+    artist_name,
+    track_name,
+    streaming_datetime,
+    min_played
+  )
+```
+
+
+
+
+
+## Data Exploration
+### Sanity Checks
+
+There are `r nrow(CLEANED_STREAMING_HISTORY)` rows in the CLEANED_STREAMING_HISTORY tibble, which is the number of songs/podcast episodes that I have listened to between `r min(CLEANED_STREAMING_HISTORY$streaming_datetime)` and `r max(CLEANED_STREAMING_HISTORY$streaming_datetime)`. Let's use the function `skim()` from the skimr package to get a sense check of the data.
+
+```{r}
+CLEANED_STREAMING_HISTORY |> 
+  skim()
+```
+
+There are `r ncol(CLEANED_STREAMING_HISTORY)` columns in the CLEANED_STREAMING_HISTORY tibble. There are `r distinct(CLEANED_STREAMING_HISTORY, artist_name) |> nrow()` unique artists and `r distinct(CLEANED_STREAMING_HISTORY, track_name) |> nrow()` unique tracks in the CLEANED_STREAMING_HISTORY tibble. It is interesting that the shortest `track_name` has a length of `r  min(str_length(CLEANED_STREAMING_HISTORY$track_name))` characters and the longest `track_name` has a length of `r max(str_length(CLEANED_STREAMING_HISTORY$track_name))` characters. Interestingly, the shortest `track_name` has a length of `r min(str_length(CLEANED_STREAMING_HISTORY$artist_name))` characters. The date ranges between `r min(CLEANED_STREAMING_HISTORY$streaming_datetime)` and `r max(CLEANED_STREAMING_HISTORY$streaming_datetime)`.
+
+### Streaming per day
+```{r}
+STREAMING_HISTORY_PER_DAY <- CLEANED_STREAMING_HISTORY |> 
+  group_by(streaming_datetime) |>
+  summarise(
+    total_hours_played = sum(min_played / 60)
+  )
+```
+
+#### What were the top 5 days I listened to music?
+Let's also investigate what days of the week these top 5 days were.
+
+```{r}
+STREAMING_HISTORY_PER_DAY |> 
+  mutate(
+    day_of_week = wday(streaming_datetime, label = TRUE)
+  ) |> 
+  arrange(desc(total_hours_played)) |> 
+  head(5)
+```
+
+It seems like 2023-05-30 and 2023-02-18 were two days when I listened to a LOT of music. I wonder what the most listened to days are?
+
+```{r}
+STREAMING_HISTORY_PER_DAY |> 
+  mutate(
+    day_of_week = wday(streaming_datetime, label = TRUE)
+    ) |> 
+  group_by(day_of_week) |>
+  summarise(
+    total_hours_played = sum(total_hours_played)
+  ) |>
+  arrange(desc(total_hours_played))
+```
+
+Surprisingly, it seems like Mondays are the days where I have listened to the most streamed music. I wonder if this is because I listen to music on my commute to work?
+Although, I don't think I was really working consistently in 2022-23.
+
+#### How did my streaming time vary by day?
+Let's plot the total hours played per day.
+
+```{r}
+GGPLOT_HOURS_PLAYED_PER_DAY <- STREAMING_HISTORY_PER_DAY |> 
+  ggplot(aes(x = streaming_datetime, y = total_hours_played)) +
+  
+  geom_point() +
+  geom_line() +
+  
+  labs(
+    x = "",
+    y = "Hours Played",
+    title = "Hours Played Per Day",
+    subtitle = "Spotify Streaming History"
+  ) +
+  
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      size = 20,
+      face = "bold"
+    ),
+    plot.subtitle = element_text(
+      size = 15
+    ),
+    axis.title = element_text(
+      size = 15
+    ),
+    axis.text = element_text(
+      size = 10
+    )
+  )
+
+GGPLOT_HOURS_PLAYED_PER_DAY
+```
+
+There is a high fluctuation in the number of hours played per day with some days, when very little music was played and some days were a lot of music was played.
+It seems that there are two days in particular, where I have listened to a lot of music. Let's investigate these days further, we know that the days are: 2023-05-30 and 2023-02-18. What did I do on these two days? Let's also include a smoothed line.
+
+```{r}
+GGPLOT_HOURS_PLAYED_PER_DAY +
+  
+  geom_point(aes(
+    colour = ifelse(
+      streaming_datetime == as.Date("2023-05-30") | 
+        streaming_datetime == as.Date("2023-02-18"),
+      "red",
+      "darkgrey"
+    )
+    )
+  ) +
+  geom_line(colour = "darkgrey") +
+  geom_smooth() +
+  geom_label(
+    label = "Flying to Australia",
+    x = as.Date("2023-05-30"),
+    y = STREAMING_HISTORY_PER_DAY |> 
+      filter(streaming_datetime == as.Date("2023-05-30")) |> 
+      pull(total_hours_played),
+    vjust = -0.5
+  ) +
+  geom_label(
+    label = "Flying to Austria",
+    x = as.Date("2023-02-18"),
+    y = STREAMING_HISTORY_PER_DAY |> 
+      filter(streaming_datetime == as.Date("2023-02-18")) |> 
+      pull(total_hours_played),
+    vjust = -0.5
+  ) +
+    expand_limits(
+    y = c(0, 20)
+  ) +
+  scale_color_identity()
+```
+
+#### How did my streaming time vary by month?
+Flying in the plane and listening to music! That makes sense. The smoothed line suggests that there was more music listened to in the second half of 2022 than the first half of 2023. Let's investigate this further: what was the average number of hours played per month and let's aggregate this by year as well.
+
+```{r}
+STREAMING_HISTORY_PER_MONTH <- CLEANED_STREAMING_HISTORY |> 
+  mutate(
+    month_floor = floor_date(streaming_datetime, unit = "month"),
+    year_floor = floor_date(streaming_datetime, unit = "year")
+  ) |> 
+  group_by(month_floor, year_floor) |>
+  summarise(
+    total_hours_played = sum(min_played / 60)
+  )
+```
+
+Let's plot the total hours played per month.
+
+```{r}
+GGPLOT_HOURS_PLAYED_PER_MONTH <- STREAMING_HISTORY_PER_MONTH |> 
+  ggplot(aes(x = month_floor, y = total_hours_played)) +
+  
+  geom_point() +
+  geom_line() +
+  
+  labs(
+    x = "",
+    y = "Hours Played",
+    title = "Hours Played Per Month",
+    subtitle = "Spotify Streaming History"
+  ) +
+  
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      size = 20,
+      face = "bold"
+    ),
+    plot.subtitle = element_text(
+      size = 15
+    ),
+    axis.title = element_text(
+      size = 15
+    ),
+    axis.text = element_text(
+      size = 10
+    )
+  )
+
+GGPLOT_HOURS_PLAYED_PER_MONTH
+```
+
+There is a high fluctuation in the number of hours played per month with some months, when very little music was played and some months were a lot of music was played (October and November 2022). Let's calculate the total number of hours played in both years.
+
+```{r}
+STREAMING_HISTORY_PER_MONTH |> 
+  group_by(year_floor) |>
+  summarise(
+    average_hours_played = mean(total_hours_played)
+  )
+```
+
+There definitely seems like there is a major difference between the two years.
+
+```{r}
