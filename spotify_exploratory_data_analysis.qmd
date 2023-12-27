@@ -35,24 +35,34 @@ Let's start exploring!
 ### https://www.tidyverse.org/
 library(tidyverse)
 
-# To allow interaction between files on Google Drive and R
-library(googledrive)
-
+# To easily create data visualisations with simple and consistent syntax and grammar.
+# https://ggplot2.tidyverse.org/index.html
 library(ggplot2)
 
+# To allow interaction between files on Google Drive and R.
+# https://googledrive.tidyverse.org/
+library(googledrive)
+
+
+
+### Other Packages:
+# To easily create summary statistics to understand and explore data.
+# https://docs.ropensci.org/skimr/
 library(skimr)
 
-# A fast JSON parser and generator
+# A fast JSON parser and generator.
 ### https://cran.r-project.org/web/packages/jsonlite/index.html
 library(jsonlite)
 
-
-
+# To easily enable file referencing in project-oriented workflows.
+# https://here.r-lib.org/
 library(here)
+
+
 
 # Google Drive Authentication --------------------------------------------------
 
-# To establish a connection between a Google Drive account and R
+# To establish a connection between a Google Drive account and R.
 drive_auth()
 
 # Example of how to download from Google Drive
