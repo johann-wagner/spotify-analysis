@@ -11,7 +11,7 @@ This quarto document is the first of several EDA projects. This project focuses 
 
 This process is documented in the following sections:
 
--   Setup and Configuration: Loading packages and API access
+-   Setup and Configuration: Loading packages and googledrive API access
 
 -   Data Loading: How to download and load the data?
 
@@ -24,6 +24,8 @@ This process is documented in the following sections:
 Let's start exploring!
 
 ## Setup and Configuration
+
+First, let's load in the packages we'll need for this project and authorise access to my google drive.
 
 ```{r}
 ### "Tidyverse"-oriented packages:
@@ -78,14 +80,16 @@ drive_auth()
 
 ## Data Loading
 
+To access the data, I need to download it from my google drive. The data is requested from Johann's Spotify account and downloaded as a zip file containing several json files. There are several different json files; however, for this analysis I'm only interested in the Streaming History files.
+
+You will only have access if Johann has given you read access to the email you authorised in 0-00_setup_and_configuration.R.
+
 ```{r}
 # Only download raw data if it hasn't already been downloaded
 if(!dir.exists(here("raw_data"))) {
   dir.create(here("raw_data"), showWarnings = FALSE)
 
   # List contents of Spotify Analysis Folder
-  # Only have access if Johann has given you read access to the email you 
-  # authorised in 0-00_setup_and_configuration.R
   spotify_dribble <- drive_ls("Spotify Analysis")
   
   # Download raw data
@@ -105,55 +109,6 @@ if(!dir.exists(here("raw_data"))) {
 # Read in individual raw json as nested lists
 # JRAW = RAW JSON
 # RAW_JSON causes alphabetical ordering inconveniences in R environment.
-JRAW_FOLLOW <- read_json(
-  path = here(
-    "raw_data",
-    "Follow.json"
-  )
-)
-
-JRAW_IDENTIFIERS <- read_json(
-  path = here(
-    "raw_data",
-    "Identifiers.json"
-  )
-)
-
-JRAW_IDENTITY <- read_json(
-  path = here(
-    "raw_data",
-    "Identity.json"
-  )
-)
-
-JRAW_INFERENCES <- read_json(
-  path = here(
-    "raw_data",
-    "Inferences.json"
-  )
-)
-
-JRAW_MARQUEE <- read_json(
-  path = here(
-    "raw_data",
-    "Inferences.json"
-  )
-)
-
-JRAW_PAYMENT <- read_json(
-  path = here(
-    "raw_data",
-    "Payments.json"
-  )
-)
-
-JRAW_PLAYLIST <- read_json(
-  path = here(
-    "raw_data",
-    "Playlist1.json"
-  )
-)
-
 JRAW_STREAMING_HISTORY_0 <- read_json(
   path = here(
     "raw_data",
@@ -174,48 +129,13 @@ JRAW_STREAMING_HISTORY_2 <- read_json(
     "StreamingHistory2.json"
   )
 )
-
-JRAW_USER_DATA <- read_json(
-  path = here(
-    "raw_data",
-    "Userdata.json"
-  )
-)
-
-JRAW_YOUR_LIBRARY <- read_json(
-  path = here(
-    "raw_data",
-    "YourLibrary.json"
-  )
-)
 ```
 
 ## Data Tidying
 
+These json files are then converted into tibbles for analysis using the `jsonlite` package. The tibbles are then combined into one tibble, as they all have the same columns. I suspect the reason why there are different files is because of the size of the data.
+
 ```{r}
-# Nested lists into tidy tibbles
-RAW_FOLLOW <- JRAW_FOLLOW %>% 
-  as_tibble()
-
-RAW_IDENTIFIERS <- JRAW_IDENTIFIERS %>% 
-  as_tibble()
-
-RAW_IDENTITY <- JRAW_IDENTITY %>% 
-  as_tibble()
-
-RAW_INFERENCES <- JRAW_INFERENCES %>% 
-  as_tibble()
-
-RAW_PAYMENT <- JRAW_PAYMENT %>% 
-  as_tibble()
-
-RAW_PLAYLIST <- JRAW_PLAYLIST %>%
-  bind_rows() %>%
-  unnest_wider(items) %>%
-  unnest_wider(track)
-  
-  
-  
 RAW_STREAMING_HISTORY_0 <- JRAW_STREAMING_HISTORY_0 %>% 
   bind_rows() %>% 
   as_tibble()
@@ -228,41 +148,18 @@ RAW_STREAMING_HISTORY_2 <- JRAW_STREAMING_HISTORY_2 %>%
   bind_rows() |> 
   as_tibble()
 
-RAW_USER_DATA <- JRAW_USER_DATA %>% 
-  bind_rows() |> 
-  as_tibble()
-
-
-RAW_YOUR_LIBRARY_TRACKS <- JRAW_YOUR_LIBRARY[["tracks"]] %>% 
-  bind_rows() |> 
-  as_tibble()
-
-RAW_YOUR_LIBRARY_ALBUMS <- JRAW_YOUR_LIBRARY[["albums"]] %>% 
-  bind_rows() |> 
-  as_tibble()
-
-RAW_YOUR_LIBRARY_SHOWS <- JRAW_YOUR_LIBRARY[["shows"]] %>% 
-  bind_rows() |> 
-  as_tibble()
-
-RAW_YOUR_LIBRARY_EPISODES <- JRAW_YOUR_LIBRARY[["episodes"]] %>% 
-  bind_rows() |> 
-  as_tibble()
-
-RAW_YOUR_LIBRARY_ARTISTS <- JRAW_YOUR_LIBRARY[["artists"]] %>% 
-  bind_rows() |> 
-  as_tibble()
-```
-
-## Data Cleaning
-
-```{r}
 # Combine all streaming history tibbles into one tibble
 RAW_STREAMING_HISTORY <- bind_rows(
   RAW_STREAMING_HISTORY_0,
   RAW_STREAMING_HISTORY_1,
   RAW_STREAMING_HISTORY_2
 )
+```
+
+## Data Cleaning
+
+```{r}
+
 
 CLEANED_STREAMING_HISTORY <- RAW_STREAMING_HISTORY |> 
   mutate(
