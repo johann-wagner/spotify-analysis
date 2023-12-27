@@ -1,7 +1,27 @@
 ---
-title: "Spotify Exploratory Data Analysis"
+title: "Spotify Exploratory Data Analysis - Streaming History"
 format: html
 ---
+
+## Introduction
+
+This is a series of exploratory data analysis (EDA) projects on my Spotify data. The data was downloaded from my Spotify account on July 23rd, 2023. The data is downloaded as a zip file containing several json files and saved on my personal google drive. The json files are then converted into tibbles for analysis using the `jsonlite` package.
+
+This quarto document is the first of several EDA projects. This project focuses on my streaming history. I'm interested in exploring my listening habits across the time period of the data. I'm also interested in exploring my listening habits across the days of the week.
+
+This process is documented in the following sections:
+
+-   Setup and Configuration: Loading packages and API access
+
+-   Data Loading: How to download and load the data?
+
+-   Data Tidying: Get a tidy dataset
+
+-   Data Cleaning: Ensure variables are in correct formats
+
+-   Data Exploration: Answer one question and come up with two extra ones
+
+Let's start exploring!
 
 ## Setup and Configuration
 
@@ -11,29 +31,16 @@ format: html
 # The tidyverse is a collection of R packages designed for data science.
 # All packages share a similar design philosophy, grammar, and data structures.
 # Tidyverse includes packages such as:
-# ggplot2, dplyr, tidyr, readr, purr, tibble, stringr, lubriate, and forcats.
+# ggplot2, dplyr, tidyr, readr, purr, tibble, stringr, lubridate, and forcats.
 ### https://www.tidyverse.org/
 library(tidyverse)
-
-# To interpolate ("glue") data into strings.
-# Compared to paste() and sprintf()
-# Easier to write and less time consuming to maintain.
-### https://glue.tidyverse.org/reference/index.html
-library(glue)
 
 # To allow interaction between files on Google Drive and R
 library(googledrive)
 
 library(ggplot2)
-library(skimr)
-library(lubridate)
-library(ggthemes)
-### Other packages:
 
-# To enable easy file referencing in project-oriented workflows
-# In contrast to using setwd()
-### https://here.r-lib.org/
-library(here)
+library(skimr)
 
 # A fast JSON parser and generator
 ### https://cran.r-project.org/web/packages/jsonlite/index.html
@@ -41,7 +48,7 @@ library(jsonlite)
 
 
 
-
+library(here)
 
 # Google Drive Authentication --------------------------------------------------
 
@@ -59,12 +66,8 @@ drive_auth()
 
 ```
 
-
-
-
-
-
 ## Data Loading
+
 ```{r}
 # Only download raw data if it hasn't already been downloaded
 if(!dir.exists(here("raw_data"))) {
@@ -177,10 +180,6 @@ JRAW_YOUR_LIBRARY <- read_json(
 )
 ```
 
-
-
-
-
 ## Data Tidying
 
 ```{r}
@@ -245,11 +244,8 @@ RAW_YOUR_LIBRARY_ARTISTS <- JRAW_YOUR_LIBRARY[["artists"]] %>%
   as_tibble()
 ```
 
-
-
-
-
 ## Data Cleaning
+
 ```{r}
 # Combine all streaming history tibbles into one tibble
 RAW_STREAMING_HISTORY <- bind_rows(
@@ -281,11 +277,8 @@ CLEANED_STREAMING_HISTORY <- RAW_STREAMING_HISTORY |>
   )
 ```
 
-
-
-
-
 ## Data Exploration
+
 ### Sanity Checks
 
 There are `r nrow(CLEANED_STREAMING_HISTORY)` rows in the CLEANED_STREAMING_HISTORY tibble, which is the number of songs/podcast episodes that I have listened to between `r min(CLEANED_STREAMING_HISTORY$streaming_datetime)` and `r max(CLEANED_STREAMING_HISTORY$streaming_datetime)`. Let's use the function `skim()` from the skimr package to get a sense check of the data.
@@ -298,6 +291,7 @@ CLEANED_STREAMING_HISTORY |>
 There are `r ncol(CLEANED_STREAMING_HISTORY)` columns in the CLEANED_STREAMING_HISTORY tibble. There are `r distinct(CLEANED_STREAMING_HISTORY, artist_name) |> nrow()` unique artists and `r distinct(CLEANED_STREAMING_HISTORY, track_name) |> nrow()` unique tracks in the CLEANED_STREAMING_HISTORY tibble. It is interesting that the shortest `track_name` has a length of `r  min(str_length(CLEANED_STREAMING_HISTORY$track_name))` characters and the longest `track_name` has a length of `r max(str_length(CLEANED_STREAMING_HISTORY$track_name))` characters. Interestingly, the shortest `track_name` has a length of `r min(str_length(CLEANED_STREAMING_HISTORY$artist_name))` characters. The date ranges between `r min(CLEANED_STREAMING_HISTORY$streaming_datetime)` and `r max(CLEANED_STREAMING_HISTORY$streaming_datetime)`.
 
 ### Streaming per day
+
 ```{r}
 STREAMING_HISTORY_PER_DAY <- CLEANED_STREAMING_HISTORY |> 
   group_by(streaming_datetime) |>
@@ -307,6 +301,7 @@ STREAMING_HISTORY_PER_DAY <- CLEANED_STREAMING_HISTORY |>
 ```
 
 #### What were the top 5 days I listened to music?
+
 Let's also investigate what days of the week these top 5 days were.
 
 ```{r}
@@ -332,10 +327,10 @@ STREAMING_HISTORY_PER_DAY |>
   arrange(desc(total_hours_played))
 ```
 
-Surprisingly, it seems like Mondays are the days where I have listened to the most streamed music. I wonder if this is because I listen to music on my commute to work?
-Although, I don't think I was really working consistently in 2022-23.
+Surprisingly, it seems like Mondays are the days where I have listened to the most streamed music. I wonder if this is because I listen to music on my commute to work? Although, I don't think I was really working consistently in 2022-23.
 
 #### How did my streaming time vary by day?
+
 Let's plot the total hours played per day.
 
 ```{r}
@@ -372,8 +367,7 @@ GGPLOT_HOURS_PLAYED_PER_DAY <- STREAMING_HISTORY_PER_DAY |>
 GGPLOT_HOURS_PLAYED_PER_DAY
 ```
 
-There is a high fluctuation in the number of hours played per day with some days, when very little music was played and some days were a lot of music was played.
-It seems that there are two days in particular, where I have listened to a lot of music. Let's investigate these days further, we know that the days are: 2023-05-30 and 2023-02-18. What did I do on these two days? Let's also include a smoothed line.
+There is a high fluctuation in the number of hours played per day with some days, when very little music was played and some days were a lot of music was played. It seems that there are two days in particular, where I have listened to a lot of music. Let's investigate these days further, we know that the days are: 2023-05-30 and 2023-02-18. What did I do on these two days? Let's also include a smoothed line.
 
 ```{r}
 GGPLOT_HOURS_PLAYED_PER_DAY +
@@ -412,6 +406,7 @@ GGPLOT_HOURS_PLAYED_PER_DAY +
 ```
 
 #### How did my streaming time vary by month?
+
 Flying in the plane and listening to music! That makes sense. The smoothed line suggests that there was more music listened to in the second half of 2022 than the first half of 2023. Let's investigate this further: what was the average number of hours played per month and let's aggregate this by year as well.
 
 ```{r}
@@ -475,11 +470,11 @@ STREAMING_HISTORY_PER_MONTH |>
 There definitely seems like there is a major difference between the two years.
 
 #### Who were my top artists and top songs?
+
 Let's investigate who my top artists. We will do this by grouping by artist name and then calculating the total number of hours played.
 
 ```{r}
 
-```{r}
 CLEANED_STREAMING_HISTORY |> 
   group_by(artist_name) |>
   summarise(
@@ -537,6 +532,7 @@ CLEANED_STREAMING_HISTORY |>
 ```
 
 #### How did my top 10 songs vary across time?
+
 Let's investigate how my top 10 songs varied across time. We will do this by grouping by track name and then calculating the total number of hours played.
 
 ```{r}
