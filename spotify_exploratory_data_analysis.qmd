@@ -157,10 +157,9 @@ RAW_STREAMING_HISTORY <- bind_rows(
 ```
 
 ## Data Cleaning
+Let's ensure the variables are in the correct format.
 
 ```{r}
-
-
 CLEANED_STREAMING_HISTORY <- RAW_STREAMING_HISTORY |> 
   mutate(
     # Convert ms to minutes
@@ -185,6 +184,9 @@ CLEANED_STREAMING_HISTORY <- RAW_STREAMING_HISTORY |>
 ```
 
 ## Data Exploration
+This data exploration has two objectives:
+1.    To get a sense of the data and to see if there are any issues with the data.
+2.    To answer several questions that I have about my listening habits.
 
 ### Sanity Checks
 
@@ -195,9 +197,12 @@ CLEANED_STREAMING_HISTORY |>
   skim()
 ```
 
-There are `r ncol(CLEANED_STREAMING_HISTORY)` columns in the CLEANED_STREAMING_HISTORY tibble. There are `r distinct(CLEANED_STREAMING_HISTORY, artist_name) |> nrow()` unique artists and `r distinct(CLEANED_STREAMING_HISTORY, track_name) |> nrow()` unique tracks in the CLEANED_STREAMING_HISTORY tibble. It is interesting that the shortest `track_name` has a length of `r  min(str_length(CLEANED_STREAMING_HISTORY$track_name))` characters and the longest `track_name` has a length of `r max(str_length(CLEANED_STREAMING_HISTORY$track_name))` characters. Interestingly, the shortest `track_name` has a length of `r min(str_length(CLEANED_STREAMING_HISTORY$artist_name))` characters. The date ranges between `r min(CLEANED_STREAMING_HISTORY$streaming_datetime)` and `r max(CLEANED_STREAMING_HISTORY$streaming_datetime)`.
+There are `r ncol(CLEANED_STREAMING_HISTORY)` columns in the CLEANED_STREAMING_HISTORY tibble. There are `r distinct(CLEANED_STREAMING_HISTORY, artist_name) |> nrow()` unique artists and `r distinct(CLEANED_STREAMING_HISTORY, track_name) |> nrow()` unique tracks in the CLEANED_STREAMING_HISTORY tibble. It is interesting that the shortest `track_name` has a length of `r  min(str_length(CLEANED_STREAMING_HISTORY$track_name))` characters and the longest `track_name` has a length of `r max(str_length(CLEANED_STREAMING_HISTORY$track_name))` characters. Interestingly, the shortest `track_name` has a length of `r min(str_length(CLEANED_STREAMING_HISTORY$artist_name))` characters. I wonder what song that is. The date ranges between `r min(CLEANED_STREAMING_HISTORY$streaming_datetime)` and `r max(CLEANED_STREAMING_HISTORY$streaming_datetime)`.
+
+It seems like the data mostly makes sense and that there are a wide range of song names and artist names.
 
 ### Streaming per day
+Let's reshape the data so that we can see how much I have streamed per day.
 
 ```{r}
 STREAMING_HISTORY_PER_DAY <- CLEANED_STREAMING_HISTORY |> 
@@ -205,22 +210,26 @@ STREAMING_HISTORY_PER_DAY <- CLEANED_STREAMING_HISTORY |>
   summarise(
     total_hours_played = sum(min_played / 60)
   )
+STREAMING_HISTORY_PER_DAY
 ```
 
 #### What were the top 5 days I listened to music?
 
-Let's also investigate what days of the week these top 5 days were.
+Let's now investigate what the top 5 days I listened to music were and include the day of the week.
 
 ```{r}
-STREAMING_HISTORY_PER_DAY |> 
+TOP_SONGS <- STREAMING_HISTORY_PER_DAY |>
   mutate(
     day_of_week = wday(streaming_datetime, label = TRUE)
   ) |> 
   arrange(desc(total_hours_played)) |> 
   head(5)
+TOP_SONGS
 ```
 
-It seems like 2023-05-30 and 2023-02-18 were two days when I listened to a LOT of music. I wonder what the most listened to days are?
+It seems like `r TOP_SONGS |> slice(1) |> pull(streaming_datetime)` and `r TOP_SONGS |> slice(2) |> pull(streaming_datetime)` were two days when I listened to a LOT of music.
+
+Let's pull it back and look at the aggregate again; I wonder what the most listened to days are?
 
 ```{r}
 STREAMING_HISTORY_PER_DAY |> 
@@ -235,6 +244,8 @@ STREAMING_HISTORY_PER_DAY |>
 ```
 
 Surprisingly, it seems like Mondays are the days where I have listened to the most streamed music. I wonder if this is because I listen to music on my commute to work? Although, I don't think I was really working consistently in 2022-23.
+
+So potentially this is because I listen to music when I was studying? To answer this question and gain more insights, I would need to look at my calendar and see what I was doing on those days.
 
 #### How did my streaming time vary by day?
 
