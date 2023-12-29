@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/1133553/5e81c8d3455f4f7fb45cd798648a6463
+bundleId: https://api.rpubs.com/api/v1/document/1133553/5e81c8d3455f4f7fb45cd798648a6463
+url: http://rpubs.com/johann-wagner/1133553
+version: 1
