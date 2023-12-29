@@ -60,6 +60,10 @@ library(jsonlite)
 # https://here.r-lib.org/
 library(here)
 
+# To easily format and scale data in visualisations.
+# https://scales.r-lib.org/
+library(scales)
+
 
 
 # Google Drive Authentication --------------------------------------------------
@@ -201,7 +205,7 @@ There are `r ncol(CLEANED_STREAMING_HISTORY)` columns in the CLEANED_STREAMING_H
 
 It seems like the data mostly makes sense and that there are a wide range of song names and artist names.
 
-### Streaming per day
+### Reshape Data: Streaming per day
 Let's reshape the data so that we can see how much I have streamed per day.
 
 ```{r}
@@ -213,7 +217,7 @@ STREAMING_HISTORY_PER_DAY <- CLEANED_STREAMING_HISTORY |>
 STREAMING_HISTORY_PER_DAY
 ```
 
-#### What were the top 5 days I listened to music?
+### What were the top 5 days I listened to music?
 
 Let's now investigate what the top 5 days I listened to music were and include the day of the week.
 
@@ -247,7 +251,7 @@ Surprisingly, it seems like Mondays are the days where I have listened to the mo
 
 So potentially this is because I listen to music when I was studying? To answer this question and gain more insights, I would need to look at my calendar and see what I was doing on those days.
 
-#### How did my streaming time vary by day?
+### How did my streaming time vary by day?
 
 Let's plot the total hours played per day.
 
@@ -285,7 +289,7 @@ GGPLOT_HOURS_PLAYED_PER_DAY <- STREAMING_HISTORY_PER_DAY |>
 GGPLOT_HOURS_PLAYED_PER_DAY
 ```
 
-There is a high fluctuation in the number of hours played per day with some days, when very little music was played and some days were a lot of music was played. It seems that there are two days in particular, where I have listened to a lot of music. Let's investigate these days further, we know that the days are: 2023-05-30 and 2023-02-18. What did I do on these two days? Let's also include a smoothed line.
+There is a high fluctuation in the number of hours played per day with some days, when very little music was played and some days were a lot of music was played. It seems that there are two days in particular, where I have listened to a lot of music. Let's investigate these days further, we know that the days are:  `r TOP_SONGS |> slice(1) |> pull(streaming_datetime)` and `r TOP_SONGS |> slice(2) |> pull(streaming_datetime)`. What did I do on these two days? Let's also include a smoothed line.
 
 ```{r}
 GGPLOT_HOURS_PLAYED_PER_DAY +
@@ -323,9 +327,10 @@ GGPLOT_HOURS_PLAYED_PER_DAY +
   scale_color_identity()
 ```
 
-#### How did my streaming time vary by month?
+Flying in the plane and listening to music! That makes sense. The smoothed line suggests that there was more music listened to in the second half of 2022 than the first half of 2023. 
 
-Flying in the plane and listening to music! That makes sense. The smoothed line suggests that there was more music listened to in the second half of 2022 than the first half of 2023. Let's investigate this further: what was the average number of hours played per month and let's aggregate this by year as well.
+### How did my streaming time vary by month?
+Let's investigate this further: what was the total number of hours played per month?
 
 ```{r}
 STREAMING_HISTORY_PER_MONTH <- CLEANED_STREAMING_HISTORY |> 
@@ -342,7 +347,7 @@ STREAMING_HISTORY_PER_MONTH <- CLEANED_STREAMING_HISTORY |>
 Let's plot the total hours played per month.
 
 ```{r}
-GGPLOT_HOURS_PLAYED_PER_MONTH <- STREAMING_HISTORY_PER_MONTH |> 
+STREAMING_HISTORY_PER_MONTH |> 
   ggplot(aes(x = month_floor, y = total_hours_played)) +
   
   geom_point() +
@@ -371,38 +376,48 @@ GGPLOT_HOURS_PLAYED_PER_MONTH <- STREAMING_HISTORY_PER_MONTH |>
       size = 10
     )
   )
-
-GGPLOT_HOURS_PLAYED_PER_MONTH
 ```
-
-There is a high fluctuation in the number of hours played per month with some months, when very little music was played and some months were a lot of music was played (October and November 2022). Let's calculate the total number of hours played in both years.
+There seems to be a bit of a pattern. Before I went backpacking (Jan 2023), I was listening to a lot more music. Let's calculate the total number of hours played in both years and see how different they are.
 
 ```{r}
 STREAMING_HISTORY_PER_MONTH |> 
   group_by(year_floor) |>
   summarise(
-    average_hours_played = mean(total_hours_played)
+    total_hours_played = sum(total_hours_played)
   )
 ```
 
-There definitely seems like there is a major difference between the two years.
+There definitely seems like there is a major difference between the two years. I wonder if this is because I was travelling in 2023 and therefore didn't have as much time to listen to music. Let's investigate this further.
 
-#### Who were my top artists and top songs?
-
-Let's investigate who my top artists. We will do this by grouping by artist name and then calculating the total number of hours played.
+### Who were my top artists?
+Let's investigate who my top artists are. We will do this by grouping by artist name and then calculating the total number of hours played.
 
 ```{r}
-
 CLEANED_STREAMING_HISTORY |> 
   group_by(artist_name) |>
   summarise(
     total_hours_played = sum(min_played / 60)
   ) |> 
   arrange(desc(total_hours_played)) |> 
-  head(10)
+  head(10) |> 
+  ggplot(aes(x = reorder(artist_name, total_hours_played), y = total_hours_played)) +
+  geom_col(aes(fill = ifelse(total_hours_played > 20, "orange", "grey"))) +
+  coord_flip() +
+  scale_y_continuous(
+    breaks = seq(0, 100, 10)
+  ) +
+  scale_fill_identity() +
+  labs(
+    x = "",
+    y = "Hours Played",
+    title = "Top Artists",
+    subtitle = "Spotify Streaming History: July 2022 - July 2023"
+  ) +
+  theme_minimal()
 ```
 
-Let's look at the top artists for each month.
+As expected, I'm a massive Parcels fan and the data shows it!
+Let's look at my top artists for each month.
 
 ```{r}
 CLEANED_STREAMING_HISTORY |> 
@@ -415,23 +430,50 @@ CLEANED_STREAMING_HISTORY |>
   ) |> 
   arrange(desc(total_hours_played)) |> 
   group_by(month_floor) |> 
-  slice(1)
+  slice(1) |> 
+  ggplot(aes(x = month_floor, y = total_hours_played, fill = artist_name)) +
+  geom_col() +
+  scale_fill_viridis_d() +
+  labs(
+    x = "",
+    y = "Hours Played",
+    title = "Top Artists Per Month",
+    subtitle = "Spotify Streaming History: July 2022 - July 2023"
+  ) +
+  theme_minimal()
 
 ```
 
-Wow, Parcels really was my favourite artist consistently throughout the year. Let's move onto top songs. We will do this by grouping by track name and then calculating the total number of hours played.
+Wow, Parcels really was my favourite artist consistently throughout the time range, although from April 2023 onwards, it seems I started listening to more podcasts. A further question for future investigation: How does my podcast listening behaviour change over time.
+
+### What were my top songs?
+Let's move onto top songs. We will do this by grouping by track name and then calculating the total number of hours played.
 
 ```{r}
 CLEANED_STREAMING_HISTORY |> 
-  group_by(track_name) |>
+  group_by(track_name, artist_name) |>
   summarise(
     total_hours_played = sum(min_played / 60)
   ) |> 
   arrange(desc(total_hours_played)) |> 
-  head(10)
+  head(10) |> 
+  ggplot(aes(x = reorder(track_name, total_hours_played), y = total_hours_played)) +
+  geom_col(aes(fill = ifelse(artist_name == "Parcels", "orange", "grey"))) +
+  coord_flip() +
+  scale_y_continuous(
+    breaks = seq(0, 10, 2)
+  ) +
+  scale_fill_identity() +
+  labs(
+    x = "",
+    y = "Hours Played",
+    title = "Top Songs",
+    subtitle = "Spotify Streaming History: July 2022 - July 2023\nOrange = Parcels"
+  ) +
+  theme_minimal()
 ```
 
-Interestingly, the top songs were not all by Parcels, although four out of the top 10 were.
+Five of the top 10 songs were songs from Parcels.
 
 Let's look at the top songs for each month.
 
@@ -440,16 +482,35 @@ CLEANED_STREAMING_HISTORY |>
   mutate(
     month_floor = floor_date(streaming_datetime, unit = "month")
   ) |> 
-  group_by(month_floor, track_name) |>
+  group_by(month_floor, track_name, artist_name) |>
   summarise(
     total_hours_played = sum(min_played / 60)
   ) |> 
   arrange(desc(total_hours_played)) |> 
   group_by(month_floor) |> 
-  slice(1)
+  slice(1) |> 
+  mutate(
+    fill_colour = case_when(
+      track_name == "Lost in Music - Dimitri from Paris Remix" ~ "pink",
+      artist_name == "Parcels" ~ "orange",
+      .default = "grey"
+      )
+  ) |> 
+  ggplot(aes(x = month_floor, y = total_hours_played, fill = fill_colour)) +
+  geom_col() +
+  scale_fill_identity() +
+  labs(
+    x = "",
+    y = "Hours Played",
+    title = "Top Songs Per Month",
+    subtitle = "Spotify Streaming History: July 2022 - July 2023\nOrange = Parcels\nPink = Lost in Music - Dimitri from Paris Remix"
+  ) +
+  theme_minimal()
 ```
 
-#### How did my top 10 songs vary across time?
+It seems that I listened to Lost in Music - Dimitri from Paris Remix a lot in July/August 2022. Parcels was my top artist for every month, but it seems that I listened to them a lot more in October 2022 and January/Febuary 2023.
+
+### How did my top 10 songs vary across time?
 
 Let's investigate how my top 10 songs varied across time. We will do this by grouping by track name and then calculating the total number of hours played.
 
@@ -481,7 +542,8 @@ CLEANED_STREAMING_HISTORY |>
     x = "",
     y = "Hours Played",
     title = "Top 5 Songs - Hours Played Per Day",
-    subtitle = "Spotify Streaming History"
+    subtitle = "Spotify Streaming History",
+    colour = "Track Name"
   ) +
   
   theme_minimal() +
@@ -508,6 +570,12 @@ This is super interesting. It seems that there are some rough patterns in my top
 
 I wonder if I could do this analysis for all of my songs and then create a grouping/cluster analysis to see if there are any temporal patterns in my music listening? Are there some songs that I listen to with other songs? Do these songs group together because I usually listen to them from the same playlist? Can I somehow link/predict my playlist data and my streaming data?
 
-These are all future questions that I would like to explore in future! But for now, these were some great first initial data explorations of my Spotify streaming history. I hope you enjoyed reading this blog post and I hope you learned something new about Spotify streaming history data analysis. If you have any questions or comments, please feel free to reach out to me. I would love to hear from you! :)
+## Moving Forward
 
-https://rpubs.com/johann-wagner/1133553
+There are quite a few questions that I would like to explore in the future. For example:
+-   I would like to explore how my podcast listening behaviour change over time.
+-   I would like to explore how my top 10 songs varied across time and utilise the `gganimate` package.
+-   I would really like to do some time series analysis on my streaming history.
+-   I'm curious on linking my streaming history data with my playlist data. I wonder if I can predict my playlist data based on my streaming history data. I think I would typically use Spotify by listening to my playlists, so potentially doing some clustering/grouping analysis on my streaming history data and then linking it to my playlist data would be interesting.
+
+These are all questions that I would like to explore in future! But for now, these were some great first initial data explorations of my Spotify streaming history. I hope you enjoyed reading this post and I hope you learned something new about Spotify streaming history data analysis. If you have any questions or comments, please feel free to reach out to me. I would love to hear from you! :)
