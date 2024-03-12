@@ -33,7 +33,7 @@ library(googledrive)
 library(ggplot2)
 library(skimr)
 library(lubridate)
-library(geomrepel)
+#library(geomrepel)
 library(ggthemes)
 ### Other packages:
 
