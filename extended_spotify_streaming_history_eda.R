@@ -20,8 +20,9 @@ source(
 )
 
 # Only download raw data if it hasn't already been downloaded
-if(!dir.exists(here("raw_data"))) {
-  dir.create(here("raw_data"), showWarnings = FALSE)
+if(!dir.exists(here("raw_data", "extended_streaming_history"))) {
+  dir.create(here("raw_data", "extended_streaming_history"), showWarnings = FALSE)
+
   
   
   
@@ -40,7 +41,8 @@ if(!dir.exists(here("raw_data"))) {
     spotify_dribble$name,
     ~ drive_download(
       file = as_id(.x),
-      path = here("raw_data", .y),
+      path = here(
+        "raw_data", "extended_streaming_history", .y),
       overwrite = TRUE
     )
   )
