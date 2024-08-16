@@ -21,6 +21,28 @@
 ### https://www.tidyverse.org/
 library(tidyverse)
 
+### Data Exploration ---------------------------------------------------------
+# To easily display summary statistics
+### https://github.com/ropensci/skimr
+library(skimr)
+
+### Data Cleaning/Wrangling --------------------------------------------------
+# To easily examine and clean dirty data
+### https://www.rdocumentation.org/packages/janitor/versions/2.2.0
+library(janitor)
+
+# To easily use date-time data
+### https://lubridate.tidyverse.org/
+library(lubridate)
+
+# To easily handle categorical variables using factors.
+### https://forcats.tidyverse.org/
+library(forcats)
+
+# To easily interprete strings that are small, fast, and dependency-free
+### https://glue.tidyverse.org/
+library(glue)
+
 # To interpolate ("glue") data into strings.
 # Compared to paste() and sprintf()
 # Easier to write and less time consuming to maintain.
